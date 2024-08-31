@@ -3,27 +3,23 @@ import os
 from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorClient
 
-MONGO_URL = os.getenv("MONGO_URL")
+mongo_url = os.getenv("MONGO_URL")
 
-client = None
+client = AsyncIOMotorClient(mongo_url)
+db = client.get_database('fastapi_chatapp')
+users_collection = db.get_collection("user")
 
 
-async def startup_db():
-    global client
+async def startup():
     try:
-        client = AsyncIOMotorClient(MONGO_URL)
-        db = client['fastapi_chatapp']
-
         await db.command("ping")
         logger.info("Successfully connected to MongoDB.")
     except Exception as e:
-        logger.error(f"Failed to connect MongoDB: {e}")
-        client = None
+        logger.error(f"Failed to connect to MongoDB: {e}")
         raise e
 
 
-async def shutdown_db():
-    global client
+async def shutdown():
     if client:
         client.close()
         logger.info("MongoDB connection closed.")

@@ -3,7 +3,8 @@ from fastapi import FastAPI
 from dotenv import load_dotenv
 import os
 
-from app.db.database import startup_db, shutdown_db
+from app.db.database import shutdown, startup
+from app.api.auth import router as auth_router
 
 load_dotenv()
 
@@ -17,12 +18,15 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def startup_event():
-    await startup_db()
+    await startup()
+
+
+app.include_router(auth_router)
 
 
 @app.on_event("shutdown")
 async def on_shutdown():
-    await shutdown_db()
+    await shutdown()
 
 
 if __name__ == "__main__":
