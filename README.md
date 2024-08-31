@@ -28,3 +28,7 @@ Ensure that you have the following installed on your system:
    ```bash
    git clone https://github.com/your-username/react-fastapi-webrtc-videocall-app.git
    cd react-fastapi-webrtc-videocall-app/backend
+
+2. **Create a virtual environment:**
+     ```bash
+     python -m venv venv
