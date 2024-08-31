@@ -1,10 +1,30 @@
-# react-fastapi-webrtc-videocall-app
-A real-time video call application built with React and FastAPI, leveraging WebRTC for peer-to-peer communication. This app allows users to connect and communicate via video calls with low latency. The project is designed to be scalable and customizable, suitable for both small projects and large-scale implementations
+# React-FastAPI-WebRTC-VideoCall-App
 
-01. python -m venv venv
-02. venv\Scripts\activate
-03. pip install pip-tools
-04. pip-compile --upgrade
-// This command will generate a requirements.txt file with the latest versions of the packages listed in requirements.in, including all their dependencies with specific versions.
-// If you need to add more dependencies, just update your requirements.in file and re-run pip-compile --upgrade
-05. 
+## Overview
+
+The **React-FastAPI-WebRTC-VideoCall-App** is a real-time video call application built using React for the frontend and FastAPI for the backend. This application leverages WebRTC technology for peer-to-peer video communication, ensuring low latency and high-quality video calls. It is designed to be scalable and customizable, making it suitable for both small projects and large-scale implementations.
+
+## Features
+
+- **Real-Time Communication**: Leverages WebRTC for real-time, peer-to-peer video calls.
+- **Scalable Architecture**: Built with scalability in mind, allowing for easy expansion to handle larger user bases.
+- **Customizable**: Easily customizable to meet specific project needs.
+- **Cross-Platform Support**: Works across different platforms and devices.
+
+## Installation
+
+### Prerequisites
+
+Ensure that you have the following installed on your system:
+
+- Python 3.8+
+- Node.js 14+
+- pip
+
+### Backend Setup
+
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/your-username/react-fastapi-webrtc-videocall-app.git
+   cd react-fastapi-webrtc-videocall-app/backend
