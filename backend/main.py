@@ -5,6 +5,7 @@ import os
 
 from app.db.database import shutdown, startup
 from app.api.auth import router as auth_router
+from app.api.video_call import router as call_router
 
 load_dotenv()
 
@@ -22,6 +23,7 @@ async def startup_event():
 
 
 app.include_router(auth_router)
+app.include_router(call_router)
 
 
 @app.on_event("shutdown")
