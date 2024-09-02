@@ -4,6 +4,7 @@ const useWebSocket = ({ URL, reconnectedInterval = 5000, maxRetries = 10 }) => {
   const [ws, setWs] = useState(null);
   const retryCount = useRef(0);
   const [messages, setMessages] = useState([]);
+  const [activeUsers, setActiveUsers] = useState([]);
 
   const connectToWebSocket = useCallback(() => {
     const socket = new WebSocket(URL);
@@ -30,8 +31,15 @@ const useWebSocket = ({ URL, reconnectedInterval = 5000, maxRetries = 10 }) => {
     };
 
     socket.onmessage = (event) => {
-      console.log("Received message:", event.data);
-      setMessages((prevMessages) => [...prevMessages, event.data]);
+      const messageData = JSON.parse(event.data);
+      console.log("Received message:", messageData);
+      if (Array.isArray(messageData)) {
+        setActiveUsers(messageData);
+        console.log(activeUsers);
+      } else {
+        setMessages((prevMessages) => [...prevMessages, messageData]);
+        console.log(messages);
+      }
     };
     return socket;
   }, [URL, reconnectedInterval, maxRetries]);
@@ -75,7 +83,14 @@ const useWebSocket = ({ URL, reconnectedInterval = 5000, maxRetries = 10 }) => {
     [ws]
   );
 
-  return { ws, connectToWebSocket, connectRoom, sendMessage, messages };
+  return {
+    ws,
+    connectToWebSocket,
+    connectRoom,
+    sendMessage,
+    messages,
+    activeUsers,
+  };
 };
 
 export default useWebSocket;

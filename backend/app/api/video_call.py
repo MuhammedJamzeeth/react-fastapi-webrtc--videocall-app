@@ -19,16 +19,8 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
             data = await websocket.receive_text()
             # logger.info(manager.get_connected_users())
 
-            data_parse = Chat.parse_raw(data)
-            chat_dict = data_parse.dict()
-            logger.info(f"New Connection {chat_dict}")
-
-            # Retrieve receiver's WebSocket connection
-            receiver_name = chat_dict.get('receiver_name')
-            logger.info(f"Looking for receiver: {receiver_name}")
-
-            await manager.send_personal_message(data, receiver_name)
-            await handle_webrtc_signaling(data, websocket, username)
+            await handle_webrtc_signaling(data, manager)
     except WebSocketDisconnect:
         manager.disconnect(username)
-        logger.info(f"Client disconnected from room {username}")
+        await manager.broadcast(f"{username} left the chat.")
+        logger.info(f"User disconnected {username}")

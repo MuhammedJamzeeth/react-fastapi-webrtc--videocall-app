@@ -1,5 +1,5 @@
 import NavBar from "../components/NavBar";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   FaChevronLeft,
   FaMicrophone,
@@ -15,7 +15,7 @@ import {
   FaRightFromBracket,
   FaLink,
 } from "react-icons/fa6";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import useWebSocket from "../hooks/useWebSocket";
 import VideoPlayer from "../components/VideoPlayer";
 
@@ -24,7 +24,7 @@ const Home = () => {
   const queryParams = new URLSearchParams(location.search);
 
   const username = queryParams.get("username");
-  const room = queryParams.get("room");
+  const receiverName = queryParams.get("receiver");
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
   const peerConnection = useMemo(
@@ -42,12 +42,85 @@ const Home = () => {
     []
   );
 
-  const { ws, connectToWebSocket, sendMessage, messages } = useWebSocket({
-    URL: `ws://localhost:8000/video-call/ws/${username}`,
-  });
+  const { ws, connectToWebSocket, sendMessage, messages, activeUsers } =
+    useWebSocket({
+      URL: `ws://localhost:8000/video-call/ws/${username}`,
+    });
+
+  // Define the functions with useCallback
+  const handleOffer = useCallback(
+    async (offer) => {
+      console.log("offer");
+
+      try {
+        await peerConnection.setRemoteDescription(
+          new RTCSessionDescription(offer)
+        );
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        sendMessage({
+          type: "answer",
+          username: username,
+          receiver_name: receiverName,
+          answer,
+        });
+
+        peerConnection.ontrack = (event) => {
+          setRemoteStream(event.streams[0]);
+        };
+      } catch (error) {
+        console.error("Error handling offer:", error);
+      }
+    },
+    [peerConnection, sendMessage, receiverName, username]
+  );
+
+  const handleAnswer = useCallback(
+    async (answer) => {
+      try {
+        await peerConnection.setRemoteDescription(
+          new RTCSessionDescription(answer)
+        );
+      } catch (error) {
+        console.error("Error handling answer:", error);
+      }
+    },
+    [peerConnection]
+  );
+
+  const handleCandidate = useCallback(
+    async (candidate) => {
+      try {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (error) {
+        console.error("Error handling ICE candidate:", error);
+      }
+    },
+    [peerConnection]
+  );
 
   useEffect(() => {
-    console.log(messages);
+    console.log(messages[0]?.message);
+
+    if (messages) {
+      messages.forEach(async (message) => {
+        const messageObject = JSON.parse(message.message);
+        console.log(messageObject);
+        switch (messageObject.type) {
+          case "offer":
+            await handleOffer(messageObject.offer);
+            break;
+          case "answer":
+            await handleAnswer(messageObject.answer);
+            break;
+          case "candidate":
+            await handleCandidate(messageObject.candidate);
+            break;
+          default:
+            break;
+        }
+      });
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -58,6 +131,9 @@ const Home = () => {
           audio: true,
         });
         setLocalStream(stream);
+        stream
+          .getTracks()
+          .forEach((track) => peerConnection.addTrack(track, stream));
         connectToWebSocket(); // Initialize WebSocket connection
       } catch (error) {
         console.error("Error accessing media devices:", error);
@@ -65,84 +141,9 @@ const Home = () => {
     };
 
     initRoom();
-  }, [connectToWebSocket]);
+  }, [connectToWebSocket, peerConnection]);
 
-  useEffect(() => {
-    const handleWebSocketMessages = (event) => {
-      const data = JSON.parse(event.data);
-
-      switch (data.type) {
-        case "offer":
-          handleOffer(data.offer);
-          break;
-        case "answer":
-          handleAnswer(data.answer);
-          break;
-        case "candidate":
-          handleCandidate(data.candidate);
-          break;
-        default:
-          break;
-      }
-    };
-
-    if (!peerConnection.current && localStream) {
-      // Create a new RTCPeerConnection
-      const pc = new RTCPeerConnection();
-      peerConnection.current = pc;
-
-      // Add local stream to the peer connection
-      localStream.getTracks().forEach((track) => {
-        pc.addTrack(track, localStream);
-      });
-
-      // Handle the ontrack event to receive the remote stream
-      pc.ontrack = (event) => {
-        setRemoteStream(event.streams[0]);
-      };
-
-      // Handle ICE candidates
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          sendMessage({ type: "candidate", candidate: event.candidate });
-        }
-      };
-
-      // Handle WebSocket messages
-      if (ws) {
-        ws.onmessage = handleWebSocketMessages;
-      }
-    }
-
-    return () => {
-      if (peerConnection.current) {
-        peerConnection.current.close();
-      }
-    };
-  }, [localStream, sendMessage, ws]);
-
-  const handleOffer = async (offer) => {
-    await peerConnection.current.setRemoteDescription(
-      new RTCSessionDescription(offer)
-    );
-    const answer = await peerConnection.current.createAnswer();
-    await peerConnection.current.setLocalDescription(answer);
-    sendMessage({ type: "answer", answer });
-  };
-
-  const handleAnswer = async (answer) => {
-    await peerConnection.current.setRemoteDescription(
-      new RTCSessionDescription(answer)
-    );
-  };
-
-  const handleCandidate = async (candidate) => {
-    await peerConnection.current.addIceCandidate(
-      new RTCIceCandidate(candidate)
-    );
-  };
-
-  const initiateCall = async () => {
+  const callUser = async () => {
     if (!peerConnection) {
       console.error("PeerConnection is not initialized.");
       return;
@@ -153,7 +154,7 @@ const Home = () => {
       sendMessage({
         type: "offer",
         username: username,
-        receiver_name: "Muhammed",
+        receiver_name: receiverName,
         offer,
       });
     } catch (error) {
@@ -210,8 +211,8 @@ const Home = () => {
         </section>
         <section className="flex items-center justify-center">
           <VideoPlayer stream={localStream} />
-          {remoteStream && <VideoPlayer stream={remoteStream} />}
-          <button onClick={initiateCall}>Start Call</button>
+          {/* {remoteStream && <VideoPlayer stream={remoteStream} />} */}
+          <button onClick={callUser}>Start Call</button>
         </section>
         <section className="bg-black shadow-md rounded-lg p-6 mb-8 w-full">
           <nav className="bg-[#242526] p-1 h-12">

@@ -1,5 +1,8 @@
+import json
 from typing import Dict
 from fastapi import WebSocket
+
+from app.models.chat import MessageResponse
 
 
 class ConnectionManager:
@@ -17,6 +20,9 @@ class ConnectionManager:
         """
         await websocket.accept()  # Accept the WebSocket connection
         self.active_connections[user_email] = websocket  # Store the WebSocket connection
+        active_user_emails = list(self.active_connections.keys())
+        active_connections_str = json.dumps(active_user_emails)
+        await self.broadcast(active_connections_str)
 
     def disconnect(self, user_email: str):
         """
@@ -36,8 +42,13 @@ class ConnectionManager:
             user_email (str): The email of the user to send the message to.
         """
         websocket = self.active_connections.get(user_email)  # Retrieve the WebSocket connection
+        connected_users = self.get_connected_users()
+        user_names = list(connected_users.keys())[0] if connected_users else None
+
+        response = MessageResponse(username=[user_names], message=message)
+
         if websocket:
-            await websocket.send_text(message)  # Send the message to the WebSocket connection
+            await websocket.send_text(response.json())  # Send the message to the WebSocket connection
 
     async def broadcast(self, message: str):
         """
@@ -46,8 +57,17 @@ class ConnectionManager:
         Args:
             message (str): The message to broadcast to all users.
         """
-        for connection in self.active_connections.values():  # Iterate over all active connections
-            await connection.send_text(message)  # Send the message to each WebSocket connection
+        disconnected_users = []
+        for user_email, connection in self.active_connections.items():
+            try:
+                await connection.send_text(message)  # Try to send the message to the WebSocket connection
+            except RuntimeError as e:
+                # If the connection is closed, add the user to the list of disconnected users
+                disconnected_users.append(user_email)
+
+        # Remove all disconnected users from the active connections
+        for user_email in disconnected_users:
+            self.disconnect(user_email)
 
     def get_connected_users(self) -> Dict[str, WebSocket]:
         return self.active_connections

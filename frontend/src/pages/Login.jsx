@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [username, setUsername] = useState("");
-  const [room, setRoom] = useState("");
+  const [receiver, setReceiver] = useState("");
   const [errors, setErrors] = useState({
     username: "",
     room: "",
@@ -17,12 +17,13 @@ const Login = () => {
     return "";
   };
 
-  const validateRoom = (value) => {
+  const validateReceiverName = (value) => {
     if (value.trim() === "") {
       return "Room is required";
-    } else if (isNaN(value) || parseInt(value) <= 0) {
-      return "Room must be a positive number";
     }
+    // else if (isNaN(value) || parseInt(value) <= 0) {
+    //   return "Room must be a positive number";
+    // }
     return "";
   };
 
@@ -33,10 +34,10 @@ const Login = () => {
     setErrors((prev) => ({ ...prev, username: error }));
   };
 
-  const handleRoomChange = (e) => {
+  const handleReceiverChange = (e) => {
     const value = e.target.value;
-    setRoom(value);
-    const error = validateRoom(value);
+    setReceiver(value);
+    const error = validateReceiverName(value);
     setErrors((prev) => ({ ...prev, room: error }));
   };
 
@@ -44,7 +45,7 @@ const Login = () => {
     e.preventDefault();
 
     const usernameError = validateUsername(username);
-    const roomError = validateRoom(room);
+    const roomError = validateReceiverName(receiver);
 
     setErrors({
       username: usernameError,
@@ -52,10 +53,10 @@ const Login = () => {
     });
 
     if (!usernameError && !roomError) {
-      navigate(`/home?username=${username}&room=${room}`);
+      navigate(`/home?username=${username}&receiver=${receiver}`);
       localStorage.setItem("username", username);
       console.log("Username:", username);
-      console.log("Room:", room);
+      console.log("Receiver:", receiver);
     } else {
       console.log("Please correct the errors in the form.");
     }
@@ -98,7 +99,7 @@ const Login = () => {
               className="block text-gray-700 text-sm font-bold mb-2"
               htmlFor="room"
             >
-              Room{" "}
+              Receiver Name{" "}
               {errors.room && (
                 <span className="text-red-500 pl-1 text-xs font-normal">
                   *{errors.room}
@@ -107,9 +108,9 @@ const Login = () => {
             </label>
             <input
               type="text"
-              id="room"
-              value={room}
-              onChange={handleRoomChange}
+              id="receiver"
+              value={receiver}
+              onChange={handleReceiverChange}
               className="shadow appearance-none rounded w-full py-2 px-3 bg-black text-white placeholder-gray-500 leading-tight focus:outline-none focus:shadow-outline"
               placeholder="Enter room name"
             />

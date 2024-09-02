@@ -33,4 +33,4 @@ Ensure that you have the following installed on your system:
      ```bash
      python -m venv venv
 
-![login page](https://github.com/MuhammedJamzeeth/react-fastapi-webrtc-videocall-app/blob/main/statics/login.png)
+![login page](https://github.com/MuhammedJamzeeth/react-fastapi-webrtc-videocall-app/blob/main/static/login.png)
