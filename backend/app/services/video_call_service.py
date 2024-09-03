@@ -22,6 +22,8 @@ async def handle_webrtc_signaling(data: str, manager: ConnectionManager):
 
         # Extract relevant information from the parsed data
         receiver_name = chat_dict.get('receiver_name')
+        user_name = chat_dict.get('user_name')
+
         message_type = chat_dict.get("type")
 
         if not receiver_name:
@@ -36,6 +38,12 @@ async def handle_webrtc_signaling(data: str, manager: ConnectionManager):
             logger.info("Processing answer")
             await manager.send_personal_message(data, receiver_name)
             logger.info("Answer sent to receiver")
+        elif message_type == "disconnect":
+            await manager.disconnect(user_name)
+        elif message_type == "personal":
+            await manager.send_personal_message(data, receiver_name)
+            logger.info(data)
+            logger.info("Personal message sent to receiver")
         else:
             logger.warning(f"Unknown message type: {message_type}")
 

@@ -16,8 +16,10 @@ class Chat(BaseModel):
     username: str
     receiver_name: str
     type: str
+    content: Optional[str] = None
     offer: Optional[Offer] = None
     answer: Optional[Answer] = None
+    time: Optional[str] = None
 
 
 class MessageResponse(BaseModel):

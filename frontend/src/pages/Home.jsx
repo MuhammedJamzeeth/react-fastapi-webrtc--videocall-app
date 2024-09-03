@@ -18,6 +18,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import useWebSocket from "../hooks/useWebSocket";
 import VideoPlayer from "../components/VideoPlayer";
+import ChatBox from "../components/ChatBox";
 
 const Home = () => {
   const location = useLocation();
@@ -27,6 +28,9 @@ const Home = () => {
   const receiverName = queryParams.get("receiver");
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
+  const [openMsg, setOpenMsg] = useState(true);
+  const [chat, setChat] = useState([]);
+
   const peerConnection = useMemo(
     () =>
       new RTCPeerConnection({
@@ -100,7 +104,7 @@ const Home = () => {
   );
 
   useEffect(() => {
-    console.log(messages[0]?.message);
+    console.log(messages);
 
     if (messages) {
       messages.forEach(async (message) => {
@@ -115,6 +119,10 @@ const Home = () => {
             break;
           case "candidate":
             await handleCandidate(messageObject.candidate);
+            break;
+          case "personal":
+            setChat((prev) => [...prev, messageObject]);
+            console.log(chat);
             break;
           default:
             break;
@@ -141,6 +149,11 @@ const Home = () => {
     };
 
     initRoom();
+    return () => {
+      // Cleanup logic
+      localStream?.getTracks().forEach((track) => track.stop());
+      peerConnection.close();
+    };
   }, [connectToWebSocket, peerConnection]);
 
   const callUser = async () => {
@@ -162,9 +175,35 @@ const Home = () => {
     }
   };
 
+  const handlePersonalMessage = (content) => {
+    console.log("clicked");
+    try {
+      sendMessage({
+        type: "personal",
+        username: username,
+        receiver_name: receiverName,
+        content: content,
+        time: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  const handleDisconnect = () => {
+    try {
+      sendMessage({
+        type: "disconnect",
+        username: username,
+        receiver_name: receiverName,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <div className="text-white">
-      <NavBar />
+      <NavBar sendMessage={handleDisconnect} />
       <div className="container mx-auto pt-8">
         <h1 className="text-4xl font-bold mb-6 mt-40 w-fit">
           <Link to="/dashboard/quests-dashboard">
@@ -176,45 +215,64 @@ const Home = () => {
             </button>
           </Link>
         </h1>
-        <section className="bg-black shadow-md rounded-lg p-6 mb-8 w-full">
+        <section className="bg-black shadow-md rounded-lg w-full">
           <nav className="bg-[#242526] p-1 h-12">
             <div className="flex justify-center items-center">
-              <div className="relative flex justify-between w-1/5 items-center">
-                <div className="relative group">
+              <div className="flex items-center">
+                <div className="group">
                   <div className="group-hover:bg-gray-600 p-1 inline-flex justify-center group-hover:rounded-lg transition-all ease-in-out duration-300 text-[12px]">
                     Quest Meeting Title
-                    <FaUsers />0
+                    {/* <FaUsers />0 */}
                   </div>
-                  <div className="absolute group-hover:border-b-2 group-hover:cursor-pointer mt-2 border-blue-500 w-full transition-all duration-100 ease-in-out "></div>
+                  {/* <div className="absolute group-hover:border-b-2 group-hover:cursor-pointer mt-2 border-blue-500 w-full transition-all duration-100 ease-in-out "></div> */}
                 </div>
-                <div className="relative group">
+                {/* <div className="relative group">
                   <div className="group-hover:bg-gray-600 p-1 group-hover:rounded-lg transition-all ease-in-out duration-300">
                     <FaCheckDouble />
                   </div>
                   <div className="absolute group-hover:border-b-2 group-hover:cursor-pointer mt-2 border-blue-500 w-full transition-all duration-100 ease-in-out"></div>
-                </div>
-                <div className="relative group">
+                </div> */}
+                {/* <div className="relative group">
                   <div className="group-hover:bg-gray-600 p-1 group-hover:rounded-lg transition-all ease-in-out duration-300">
                     <FaLink />
                   </div>
                   <div className="absolute group-hover:border-b-2 group-hover:cursor-pointer mt-2 border-blue-500 w-full transition-all duration-100 ease-in-out "></div>
-                </div>
-                <div className="relative group">
-                  <div className="group-hover:bg-gray-600 p-1 group-hover:rounded-lg transition-all ease-in-out duration-300">
+                </div> */}
+                <div className="group">
+                  <div className="group-hover:bg-gray-600 pt-2 pl-3 group-hover:rounded-lg transition-all ease-in-out duration-300">
                     <FaRightFromBracket />
                   </div>
-                  <div className="absolute group-hover:border-b-2 group-hover:cursor-pointer mt-2 border-blue-500 w-full transition-all duration-100 ease-in-out"></div>
+                  <div className=" group-hover:border-b-2 group-hover:cursor-pointer mt-2 border-blue-500 w-full transition-all duration-100 ease-in-out"></div>
                 </div>
               </div>
             </div>
           </nav>
         </section>
-        <section className="flex items-center justify-center">
+        <section className="flex items-center justify-between h-[50svh]">
+          {/* <div className="w-full h-full md:w-3/4 lg:w-2/3"> */}
           <VideoPlayer stream={localStream} />
+          {/* </div> */}
           {/* {remoteStream && <VideoPlayer stream={remoteStream} />} */}
-          <button onClick={callUser}>Start Call</button>
+          {/* <button onClick={callUser}>Start Call</button> */}
+          {}
+          {/* {openMsg && ( */}
+          <div
+            className={`h-full w-[40%] transition-all duration-300 ease-in-out ${
+              openMsg
+                ? "opacity-100 translate-x-0"
+                : "opacity-0 translate-x-[240px]"
+            }`}
+          >
+            <ChatBox
+              name={receiverName}
+              activeUsers={activeUsers}
+              handleMessage={handlePersonalMessage}
+              chat={chat}
+            />
+          </div>
+          {/* )} */}
         </section>
-        <section className="bg-black shadow-md rounded-lg p-6 mb-8 w-full">
+        <section className="bg-black shadow-md rounded-lg mb-8 w-full">
           <nav className="bg-[#242526] p-1 h-12">
             <div className="flex justify-center items-center">
               <div className="relative flex justify-between w-1/5 items-center">
@@ -242,7 +300,10 @@ const Home = () => {
                   </div>
                   <div className="absolute group-hover:border-b-2 group-hover:cursor-pointer mt-2 border-blue-500 w-full transition-all duration-100 ease-in-out "></div>
                 </div>
-                <div className="relative group">
+                <div
+                  className="relative group"
+                  onClick={() => setOpenMsg((prev) => !prev)}
+                >
                   <div className="group-hover:bg-gray-600 p-1 group-hover:rounded-lg transition-all ease-in-out duration-300">
                     <FaMessage />
                   </div>

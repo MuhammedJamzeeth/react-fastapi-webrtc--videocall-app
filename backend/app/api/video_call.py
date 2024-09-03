@@ -21,6 +21,6 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
 
             await handle_webrtc_signaling(data, manager)
     except WebSocketDisconnect:
-        manager.disconnect(username)
+        await manager.disconnect(username)
         await manager.broadcast(f"{username} left the chat.")
         logger.info(f"User disconnected {username}")

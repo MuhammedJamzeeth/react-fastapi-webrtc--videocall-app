@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { FaArrowRight } from "react-icons/fa";
 import Avatar from "react-avatar";
 
-export default function NavBar() {
+export default function NavBar({ sendMessage = () => {} }) {
   const user = localStorage.getItem("username");
 
   const [isOpen, setIsOpen] = useState(false);
@@ -17,7 +17,9 @@ export default function NavBar() {
   };
 
   const handleLogout = () => {
+    sendMessage();
     localStorage.removeItem("username");
+    window.location.reload();
   };
 
   useEffect(() => {

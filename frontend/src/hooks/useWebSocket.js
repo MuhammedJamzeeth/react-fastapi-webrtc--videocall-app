@@ -42,7 +42,7 @@ const useWebSocket = ({ URL, reconnectedInterval = 5000, maxRetries = 10 }) => {
       }
     };
     return socket;
-  }, [URL, reconnectedInterval, maxRetries]);
+  }, [URL, reconnectedInterval, maxRetries, messages]);
 
   useEffect(() => {
     const socket = connectToWebSocket();

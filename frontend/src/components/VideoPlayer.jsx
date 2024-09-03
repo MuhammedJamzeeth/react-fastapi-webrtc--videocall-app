@@ -1,30 +1,45 @@
 import { useRef, useEffect } from "react";
-import PropTypes from "prop-types";
+import useCamera from "../hooks/useCamera";
 
-const VideoPlayer = ({ stream }) => {
+const VideoPlayer = () => {
   const videoRef = useRef(null);
+  const { stream, error, getCameraStream } = useCamera({
+    video: true,
+    audio: false,
+  });
 
   useEffect(() => {
-    console.log(stream);
     if (videoRef.current && stream) {
       videoRef.current.srcObject = stream;
     }
   }, [stream]);
 
+  // Convert error to a string if it is an object
+  const errorMessage =
+    typeof error === "string"
+      ? error
+      : error?.message || "An unknown error occurred.";
+
   return (
-    <div>
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        style={{ width: "100%", height: "auto" }}
-      />
+    <div className="flex w-full">
+      {error ? (
+        <div className="error">
+          <p>{errorMessage}</p>
+          <p>
+            Please check your camera settings or try restarting your browser.
+          </p>
+          <button onClick={getCameraStream}>Retry</button>
+        </div>
+      ) : (
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          style={{ width: "100%", height: "auto" }}
+        />
+      )}
     </div>
   );
-};
-
-VideoPlayer.propTypes = {
-  stream: PropTypes.instanceOf(MediaStream),
 };
 
 export default VideoPlayer;
